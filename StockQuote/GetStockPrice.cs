@@ -5,8 +5,8 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
 using StockQuote.Services;
-using StockQuote.Dtos;
 
 namespace StockQuote
 {
@@ -24,16 +24,13 @@ namespace StockQuote
         [Function("GetStockPrice")]
         [OpenApiOperation(operationId: "GetStockPrice", tags: new[] { "stock-price/symbol" })]
         [OpenApiParameter(name: "symbol", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "Symbol to get stock data from")]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "OK response")]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "stock-price/symbol/{symbol:alpha}/open")] HttpRequestData req, string symbol)
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response message containing a JSON result")]
+        public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "stock-price/symbol/{symbol:alpha}")] HttpRequestData req, string symbol)
         {
             _logger.LogInformation($"Getting open stock price for symbol: {symbol}");
 
             var quoteResponse = await _stockQuoteService.GetStockQuote(symbol);
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync<QuoteResponse>(quoteResponse);
-
-            return response;
+            return (ActionResult)new OkObjectResult(quoteResponse);
         }
     }
 }
